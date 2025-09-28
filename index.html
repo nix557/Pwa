@@ -11,8 +11,12 @@
 
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Marked.js via CDN -->
+    
+    <!-- External Libraries for File Processing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,7 +54,8 @@
         /* Styling untuk konten yang dihasilkan oleh Marked.js */
         .chat-content p { margin-bottom: 0.5rem; }
         .chat-content p:last-child { margin-bottom: 0; }
-        .chat-content ul, .chat-content ol { list-style-position: inside; padding-left: 1rem; margin-bottom: 0.5rem; }
+        .chat-content ul { list-style-type: disc; list-style-position: outside; padding-left: 1.25rem; margin-bottom: 0.5rem; }
+        .chat-content ol { list-style-type: decimal; list-style-position: outside; padding-left: 1.25rem; margin-bottom: 0.5rem; }
         .chat-content li { margin-bottom: 0.25rem; }
         .chat-content code { background-color: #1f2937; color: #e5e7eb; padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-size: 0.9em; }
         .chat-content pre { background-color: #111827; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.5rem; }
@@ -60,20 +65,9 @@
         .chat-content blockquote { border-left: 4px solid #4b5563; padding-left: 1rem; margin-left: 0; color: #9ca3af; }
         
         /* Styling untuk tabel */
-        .chat-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 0.5rem;
-        }
-        .chat-content th, .chat-content td {
-            border: 1px solid #4b5563; /* Garis abu-abu */
-            padding: 0.5rem 0.75rem;
-            text-align: left;
-            background-color: transparent;
-        }
-        .chat-content th {
-            font-weight: 600;
-        }
+        .chat-content table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; }
+        .chat-content th, .chat-content td { border: 1px solid #4b5563; padding: 0.5rem 0.75rem; text-align: left; background-color: transparent; }
+        .chat-content th { font-weight: 600; }
     </style>
 </head>
 <body class="bg-black text-gray-100">
@@ -83,7 +77,7 @@
     </header>
 
     <!-- Area Pesan Chat (Scrollable with Padding) -->
-    <main id="chat-container" class="h-[100dvh] overflow-y-auto px-4 md:px-6 pt-20 pb-28 space-y-6 w-full max-w-3xl mx-auto no-scrollbar">
+    <main id="chat-container" class="h-[100dvh] overflow-y-auto px-4 md:px-6 pt-20 pb-48 space-y-6 w-full max-w-3xl mx-auto no-scrollbar">
         <!-- Pesan akan dirender oleh JavaScript di sini -->
         <div id="messages-end"></div>
     </main>
@@ -91,14 +85,24 @@
     <!-- Form Input Pesan (Fixed) -->
     <footer class="bg-black border-t border-gray-800 pt-4 pb-3 px-4 w-full fixed bottom-0">
         <div class="max-w-3xl mx-auto">
-            <div id="error-banner" class="hidden bg-red-900 bg-opacity-50 border border-red-700 text-red-300 px-4 py-2 rounded-lg mb-2 text-sm"></div>
+            <!-- File Preview Container -->
+            <div id="file-preview-container" class="grid grid-cols-3 gap-2 mb-3"></div>
+
             <form id="chat-form" class="w-full">
                 <div class="relative flex items-center">
+                    <!-- Tombol Upload File -->
+                    <button type="button" id="upload-button" class="absolute inset-y-0 left-0 flex items-center justify-center h-full w-12 text-blue-500 hover:text-blue-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                    </button>
+                    <input type="file" id="file-input" class="hidden" multiple accept=".doc,.docx,.xls,.xlsx,.pdf,image/*">
+                    
                     <input
                         id="chat-input"
                         type="text"
                         placeholder="Memuat..."
-                        class="flex-1 w-full px-5 py-3 pr-14 bg-gray-900 rounded-full text-gray-100 placeholder:text-gray-500 focus:outline-none transition duration-200"
+                        class="flex-1 w-full px-12 py-3 bg-gray-900 rounded-full text-gray-100 placeholder:text-gray-500 focus:outline-none transition duration-200"
                         disabled 
                     />
                     <button
@@ -108,8 +112,7 @@
                         disabled
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                            <path d="M3.478 2.405a.75.75
- 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                            <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
                         </svg>
                     </button>
                 </div>
@@ -124,9 +127,11 @@
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.getElementById('file-input');
+        const filePreviewContainer = document.getElementById('file-preview-container');
         const messagesEnd = document.getElementById('messages-end');
-        const errorBanner = document.getElementById('error-banner');
-
+        
         // --- Konfigurasi API ---
         let API_KEY = ""; // Akan diisi oleh pengguna
         const SYSTEM_INSTRUCTION = "You are a helpful and friendly assistant. Your responses should be concise, helpful, and polite. Your name is Gemini. You should format your responses using Markdown.";
@@ -134,6 +139,7 @@
         // --- State Aplikasi ---
         let messages = [];
         let isLoading = false;
+        let uploadedFiles = []; // Menyimpan file yang akan diupload
 
         // --- Fungsi Bantuan untuk Membuat HTML ---
         const createMessageHTML = (msg) => {
@@ -149,9 +155,11 @@
                 messageWrapper.innerHTML = `<div class="max-w-[80%] px-3 py-2 sm:px-4 sm:py-3 rounded-2xl bg-blue-900/50 text-gray-100 rounded-br-lg"><div class="chat-content text-base leading-relaxed">${content}</div></div>`;
             } else {
                 const botAvatar = `<img src="logo.png" alt="AI Avatar" class="w-8 h-8 flex-shrink-0 object-cover">`;
+                // PERBAIKAN: Tambahkan kelas warna merah jika pesan adalah error
+                const textColorClass = msg.isError ? 'text-red-400' : 'text-gray-100';
                 messageWrapper.innerHTML = `
                     ${botAvatar}
-                    <div class="flex-1 text-gray-100 pt-1"><div class="chat-content text-base leading-relaxed">${content}</div></div>`;
+                    <div class="flex-1 pt-1 ${textColorClass}"><div class="chat-content text-base leading-relaxed">${content}</div></div>`;
             }
             return messageWrapper;
         };
@@ -173,79 +181,188 @@
         };
 
         // --- Fungsi Inti ---
-        const showError = (message) => {
-            errorBanner.textContent = message;
-            errorBanner.classList.remove('hidden');
+        const showErrorInChat = (message) => {
+            // PERBAIKAN: Tambahkan properti isError saat membuat pesan error
+            messages.push({ role: 'model', parts: [{ text: `Terjadi kesalahan: ${message}` }], isError: true });
+            renderMessages();
         };
 
-        const hideError = () => {
-            errorBanner.classList.add('hidden');
-        };
-
-        const renderMessages = () => {
-            // Simpan semua node pesan yang ada
-            const existingMessages = Array.from(chatContainer.children).filter(node => node.id !== 'messages-end');
-            
-            // Hapus semua node pesan lama
-            existingMessages.forEach(node => node.remove());
-
-            // Render ulang semua pesan dan masukkan sebelum elemen 'messages-end'
-            messages.forEach(msg => {
-                chatContainer.insertBefore(createMessageHTML(msg), messagesEnd);
-            });
-
-            // Hapus indikator loading lama jika ada
-            const oldLoadingIndicator = chatContainer.querySelector('.loading-indicator-wrapper');
-            if(oldLoadingIndicator) oldLoadingIndicator.remove();
-            
-            // Tambahkan indikator loading jika diperlukan
-            if (isLoading) {
-                 const loadingIndicator = createLoadingIndicatorHTML();
-                 loadingIndicator.classList.add('loading-indicator-wrapper');
-                 chatContainer.insertBefore(loadingIndicator, messagesEnd);
-            }
-            
-            messagesEnd.scrollIntoView({ behavior: 'smooth' });
-        };
-        
         const initializeChat = () => {
             chatInput.disabled = false;
             sendButton.disabled = false;
             chatInput.placeholder = "Input API Key Anda...";
             messages.push({ role: 'model', parts: [{ text: 'Selamat datang! Mohon masukkan Gemini API Key Anda untuk memulai.' }] });
             renderMessages();
+        };
+
+        // --- Fungsi Baru & Dimodifikasi untuk File Upload ---
+        const formatFileSize = (bytes) => {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        };
+
+        const getFileIcon = (mimeType, fileName) => {
+            const lowerFileName = fileName.toLowerCase();
+            if (mimeType.includes("pdf") || lowerFileName.endsWith(".pdf")) return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-full h-full"><path fill="#EF4444" d="M20 8v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2h8l6 6z"/><path fill="#DC2626" d="M14 2v6h6L14 2z"/><text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="7" font-family="sans-serif" font-weight="bold">PDF</text></svg>`;
+            if (mimeType.includes("word") || lowerFileName.endsWith(".docx")) return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-full h-full"><path fill="#3B82F6" d="M20 8v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2h8l6 6z"/><path fill="#2563EB" d="M14 2v6h6L14 2z"/><text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="10" font-family="sans-serif" font-weight="bold">W</text></svg>`;
+            if (mimeType.includes("sheet") || lowerFileName.endsWith(".xlsx")) return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-full h-full"><path fill="#22C55E" d="M20 8v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2h8l6 6z"/><path fill="#16A34A" d="M14 2v6h6L14 2z"/><text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="10" font-family="sans-serif" font-weight="bold">X</text></svg>`;
+            return `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0011.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>`;
         }
 
+        const renderPreviews = () => {
+            filePreviewContainer.innerHTML = '';
+            filePreviewContainer.className = 'grid grid-cols-3 gap-2 mb-3'; 
+            
+            uploadedFiles.forEach((file, index) => {
+                const previewWrapper = document.createElement('div');
+                previewWrapper.className = 'relative group flex items-center w-full bg-gray-900 rounded-lg p-2 overflow-hidden';
+
+                let icon;
+                if (file.type.startsWith('image/')) {
+                    icon = `<img src="${file.data}" class="w-8 h-8 flex-shrink-0 object-cover rounded-md bg-gray-700">`;
+                } else {
+                    icon = `<div class="w-8 h-8 flex-shrink-0">${getFileIcon(file.type, file.name)}</div>`;
+                }
+
+                const fileInfo = `
+                    <div class="ml-2 flex-1 min-w-0">
+                        <p class="text-xs text-gray-200 truncate">${file.name}</p>
+                        <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+                    </div>
+                `;
+                
+                const removeButton = `
+                    <button data-index="${index}" class="absolute top-1 right-1 w-5 h-5 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity remove-file-btn z-10">
+                        &times;
+                    </button>`;
+
+                previewWrapper.innerHTML = removeButton + icon + fileInfo;
+                filePreviewContainer.appendChild(previewWrapper);
+            });
+        };
+
+        const processFile = async (file) => {
+            const reader = new FileReader();
+            return new Promise((resolve, reject) => {
+                const fileType = file.type;
+                const fileName = file.name;
+                const fileSize = file.size;
+
+                if (fileType.startsWith('image/') || fileType === 'application/pdf') {
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve({ name: fileName, size: fileSize, type: fileType, data: reader.result, kind: 'base64' });
+                } else if (fileName.toLowerCase().endsWith('.docx')) {
+                    reader.readAsArrayBuffer(file);
+                    reader.onload = (event) => {
+                        mammoth.extractRawText({ arrayBuffer: event.target.result })
+                            .then(result => resolve({ name: fileName, size: fileSize, type: fileType, data: result.value, kind: 'text' }))
+                            .catch(reject);
+                    };
+                } else if (fileName.toLowerCase().endsWith('.xlsx')) {
+                     reader.readAsArrayBuffer(file);
+                     reader.onload = (event) => {
+                        try {
+                            const workbook = XLSX.read(event.target.result, { type: 'buffer' });
+                            let textContent = '';
+                            workbook.SheetNames.forEach(sheetName => {
+                                const worksheet = workbook.Sheets[sheetName];
+                                textContent += XLSX.utils.sheet_to_txt(worksheet);
+                            });
+                             resolve({ name: fileName, size: fileSize, type: fileType, data: textContent, kind: 'text' });
+                        } catch (e) { reject(e); }
+                     };
+                } else {
+                    reject(new Error(`Tipe file ${fileName.split('.').pop()} tidak didukung.`));
+                }
+                reader.onerror = error => reject(error);
+            });
+        };
+        
+        const handleFiles = async (files) => {
+            if (!files.length) return;
+
+            const filesToProcess = Array.from(files);
+            if (uploadedFiles.length + filesToProcess.length > 3) {
+                showErrorInChat("Maksimal 3 file.");
+                return;
+            }
+
+            const originalPlaceholder = chatInput.placeholder;
+            chatInput.placeholder = "Memproses file...";
+            chatInput.disabled = true;
+
+            try {
+                const processedFiles = await Promise.all(filesToProcess.map(processFile));
+                uploadedFiles.push(...processedFiles);
+            } catch (error) {
+                showErrorInChat(error.message || 'Gagal memproses salah satu file.');
+            } finally {
+                chatInput.placeholder = originalPlaceholder;
+                chatInput.disabled = false;
+                renderPreviews();
+            }
+        };
+
+        const clearFiles = () => {
+             uploadedFiles = [];
+             renderPreviews();
+        };
+
+        const renderMessages = () => {
+            const existingMessages = Array.from(chatContainer.children).filter(node => node.id !== 'messages-end');
+            existingMessages.forEach(node => node.remove());
+            messages.forEach(msg => {
+                chatContainer.insertBefore(createMessageHTML(msg), messagesEnd);
+            });
+            const oldLoadingIndicator = chatContainer.querySelector('.loading-indicator-wrapper');
+            if(oldLoadingIndicator) oldLoadingIndicator.remove();
+            if (isLoading) {
+                 const loadingIndicator = createLoadingIndicatorHTML();
+                 loadingIndicator.classList.add('loading-indicator-wrapper');
+                 chatContainer.insertBefore(loadingIndicator, messagesEnd);
+            }
+            messagesEnd.scrollIntoView({ behavior: 'smooth' });
+        };
+        
         const callGeminiAPI = async (messageHistory) => {
             isLoading = true;
-            hideError();
             renderMessages();
             
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
 
             try {
-                const payload = { 
-                    contents: messageHistory, 
-                    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-                    tools: [{ "google_search": {} }] 
-                };
+                const lastMessage = messageHistory[messageHistory.length - 1];
+                let textContent = lastMessage.parts[0].text;
+                const fileParts = [];
+                uploadedFiles.forEach(file => {
+                    if(file.kind === 'base64') {
+                        fileParts.push({ inlineData: { mimeType: file.type, data: file.data.split(',')[1] } });
+                    } else if (file.kind === 'text') {
+                        textContent = `Konteks dari file ${file.name}:\n\n${file.data}\n\nPesan pengguna:\n${textContent}`;
+                    }
+                });
+                lastMessage.parts = [{ text: textContent }, ...fileParts];
+                const payload = { contents: messageHistory, systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }, tools: [{ "google_search": {} }] };
                 const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.error?.message || `Kesalahan API: ${response.statusText}`);
                 }
-                
                 const data = await response.json();
                 const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, saya tidak bisa mendapatkan respons.";
                 messages.push({ role: 'model', parts: [{ text: botResponse }] });
+                clearFiles();
 
             } catch (err) {
-                showError(err.message);
+                showErrorInChat(err.message);
                 if (err.message.toLowerCase().includes("api key not valid")) {
                     API_KEY = "";
-                    messages.push({role: 'model', parts: [{ text: 'API Key sepertinya tidak valid. Silakan coba masukkan lagi.'}]});
+                    messages.push({role: 'model', parts: [{ text: 'API Key sepertinya tidak valid. Silakan coba masukkan lagi.'}], isError: true});
                     chatInput.placeholder = "Input API Key Anda...";
+                    renderMessages();
                 }
             } finally {
                 isLoading = false;
@@ -257,48 +374,47 @@
         };
 
         // --- Event Listener ---
+        uploadButton.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+            e.target.value = null; // Reset file input
+        });
+        filePreviewContainer.addEventListener('click', (e) => {
+             if (e.target.closest('.remove-file-btn')) {
+                const button = e.target.closest('.remove-file-btn');
+                const index = parseInt(button.dataset.index, 10);
+                uploadedFiles.splice(index, 1);
+                renderPreviews();
+            }
+        });
+
         chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const userInput = chatInput.value.trim();
-            if (!userInput || isLoading) return;
-
+            if ((!userInput && uploadedFiles.length === 0) || isLoading) return;
             if (!API_KEY) {
                 API_KEY = userInput;
                 chatInput.value = '';
                 chatInput.placeholder = 'Ketik pesan Anda...';
                 messages = [{ role: 'model', parts: [{ text: 'API Key diterima! Anda bisa mulai percakapan.' }] }];
                 renderMessages();
-                chatInput.blur(); // Menutup keyboard setelah submit API Key
                 return;
             }
-            
-            messages.push({ role: 'user', parts: [{ text: userInput }] });
+            messages.push({ role: 'user', parts: [{ text: userInput || "Tolong jelaskan file-file ini." }] });
             chatInput.value = '';
             chatInput.disabled = true;
             sendButton.disabled = true;
-            chatInput.blur(); // Menutup keyboard setelah submit pesan
-
             renderMessages();
             callGeminiAPI(messages);
         });
         
-        chatInput.addEventListener('blur', () => {
-            // Ini memaksa browser untuk menggambar ulang layout
-            // saat keyboard ditutup secara manual.
-            window.scrollTo(0, 0);
-        });
+        chatInput.addEventListener('blur', () => { window.scrollTo(0, 0); });
 
         // --- Inisialisasi Aplikasi & PWA ---
         window.addEventListener('load', () => {
             initializeChat();
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('Service Worker berhasil didaftarkan:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Pendaftaran Service Worker gagal:', error);
-                    });
+                navigator.serviceWorker.register('/sw.js').catch(console.error);
             }
         });
     </script>
