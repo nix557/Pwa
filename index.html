@@ -238,7 +238,8 @@
                 renderMessages();
                 chatInput.disabled = false;
                 sendButton.disabled = false;
-                chatInput.focus();
+                // Hilangkan fokus dari input untuk menutup keyboard di mobile
+                chatInput.blur();
             }
         };
 
@@ -273,7 +274,7 @@
             initializeChat();
             // Registrasi Service Worker
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.service-worker.register('/sw.js')
                     .then(registration => {
                         console.log('Service Worker berhasil didaftarkan:', registration);
                     })
