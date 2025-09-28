@@ -77,21 +77,19 @@
     </style>
 </head>
 <body class="bg-black text-gray-100">
-    <!-- Header (Fixed) -->
-    <header class="bg-black border-b border-gray-800 p-4 shadow-sm w-full z-10 fixed top-0">
-        <h1 class="text-xl font-semibold text-center text-gray-100">Gemini Chatbot</h1>
+    <!-- Header (Fixed & Empty) -->
+    <header class="bg-black border-b border-gray-800 p-4 shadow-sm w-full z-10 fixed top-0 h-16">
+        <!-- Konten header dihapus -->
     </header>
 
     <!-- Area Pesan Chat (Scrollable with Padding) -->
-    <!-- PERBAIKAN 1: Menambah padding bawah (pb-28) -->
     <main id="chat-container" class="h-[100dvh] overflow-y-auto px-4 md:px-6 pt-20 pb-28 space-y-6 w-full max-w-3xl mx-auto no-scrollbar">
         <!-- Pesan akan dirender oleh JavaScript di sini -->
-        <!-- PERBAIKAN 2: Memindahkan elemen scroll-to ke dalam container -->
         <div id="messages-end"></div>
     </main>
 
     <!-- Form Input Pesan (Fixed) -->
-    <footer class="bg-black border-t border-gray-800 p-4 w-full fixed bottom-0">
+    <footer class="bg-black border-t border-gray-800 pt-4 pb-3 px-4 w-full fixed bottom-0">
         <div class="max-w-3xl mx-auto">
             <div id="error-banner" class="hidden bg-red-900 bg-opacity-50 border border-red-700 text-red-300 px-4 py-2 rounded-lg mb-2 text-sm"></div>
             <form id="chat-form" class="w-full">
@@ -100,7 +98,7 @@
                         id="chat-input"
                         type="text"
                         placeholder="Memuat..."
-                        class="flex-1 w-full px-5 py-3 pr-14 bg-gray-900 border border-gray-800 rounded-full text-gray-100 placeholder:text-gray-500 focus:outline-none transition duration-200"
+                        class="flex-1 w-full px-5 py-3 pr-14 bg-gray-900 rounded-full text-gray-100 placeholder:text-gray-500 focus:outline-none transition duration-200"
                         disabled 
                     />
                     <button
@@ -110,11 +108,13 @@
                         disabled
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                            <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                            <path d="M3.478 2.405a.75.75
+ 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
                         </svg>
                     </button>
                 </div>
             </form>
+            <p class="text-center text-xs text-gray-600 mt-2">Powered by Nixon</p>
         </div>
     </footer>
 
@@ -148,7 +148,7 @@
             if (isUser) {
                 messageWrapper.innerHTML = `<div class="max-w-[80%] px-3 py-2 sm:px-4 sm:py-3 rounded-2xl bg-blue-900/50 text-gray-100 rounded-br-lg"><div class="chat-content text-base leading-relaxed">${content}</div></div>`;
             } else {
-                const botAvatar = `<div class="w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center bg-gray-800 text-gray-400 font-bold text-sm">AI</div>`;
+                const botAvatar = `<img src="logo.png" alt="AI Avatar" class="w-8 h-8 flex-shrink-0 object-cover">`;
                 messageWrapper.innerHTML = `
                     ${botAvatar}
                     <div class="flex-1 text-gray-100 pt-1"><div class="chat-content text-base leading-relaxed">${content}</div></div>`;
@@ -159,7 +159,7 @@
         const createLoadingIndicatorHTML = () => {
             const loadingWrapper = document.createElement('div');
             loadingWrapper.className = 'flex items-start gap-3 justify-start';
-            const botAvatar = `<div class="w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center bg-gray-800 text-gray-400 font-bold text-sm">AI</div>`;
+            const botAvatar = `<img src="logo.png" alt="AI Avatar" class="w-8 h-8 flex-shrink-0 object-cover">`;
             loadingWrapper.innerHTML = `
                 ${botAvatar}
                 <div class="flex-1 pt-1">
