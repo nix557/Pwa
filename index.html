@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gemini Chatbot</title>
+    
+    <!-- PWA Manifest & Theme Color -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000"/>
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* Menggunakan font Poppins yang sudah diimpor */
+        body {
+            font-family: 'Poppins', sans-serif;
+            overscroll-behavior-y: contain;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Animasi untuk loading dots */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-dots span {
+            animation: pulse 1.4s infinite ease-in-out both;
+        }
+        .animate-pulse-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .animate-pulse-dots span:nth-child(2) { animation-delay: -0.16s; }
+        
+        /* Styling untuk konten yang dihasilkan oleh Marked.js */
+        .chat-content p { margin-bottom: 0.5rem; }
+        .chat-content p:last-child { margin-bottom: 0; }
+        .chat-content ul, .chat-content ol { list-style-position: inside; padding-left: 1rem; margin-bottom: 0.5rem; }
+        .chat-content li { margin-bottom: 0.25rem; }
+        .chat-content code { background-color: #1f2937; color: #e5e7eb; padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-size: 0.9em; }
+        .chat-content pre { background-color: #111827; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.5rem; }
+        .chat-content pre code { background-color: transparent; padding: 0; }
+        .chat-content a { color: #3b82f6; text-decoration: underline; }
+        .chat-content a:hover { color: #60a5fa; }
+        .chat-content blockquote { border-left: 4px solid #4b5563; padding-left: 1rem; margin-left: 0; color: #9ca3af; }
+        
+        /* Styling untuk tabel */
+        .chat-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0.5rem;
+        }
+        .chat-content th, .chat-content td {
+            border: 1px solid #4b5563; /* Garis abu-abu */
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            background-color: transparent;
+        }
+        .chat-content th {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-[100dvh] bg-black text-gray-100">
+    <!-- Header (Floating) -->
+    <header class="bg-black border-b border-gray-800 p-4 shadow-sm w-full z-10 sticky top-0">
+        <h1 class="text-xl font-semibold text-center text-gray-100">Gemini Chatbot</h1>
+    </header>
+
+    <!-- Area Pesan Chat (Scrollable) -->
+    <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 w-full max-w-3xl mx-auto">
+        <!-- Pesan akan dirender oleh JavaScript di sini -->
+    </main>
+    <div id="messages-end"></div>
+
+    <!-- Form Input Pesan (Floating) -->
+    <footer class="bg-black border-t border-gray-800 p-4 sticky bottom-0">
+        <div class="max-w-3xl mx-auto">
+            <div id="error-banner" class="hidden bg-red-900 bg-opacity-50 border border-red-700 text-red-300 px-4 py-2 rounded-lg mb-2 text-sm"></div>
+            <form id="chat-form" class="w-full">
+                <div class="relative flex items-center">
+                    <input
+                        id="chat-input"
+                        type="text"
+                        placeholder="Memuat..."
+                        class="flex-1 w-full px-5 py-3 pr-14 bg-gray-900 border border-gray-800 rounded-full text-gray-100 placeholder:text-gray-500 focus:outline-none transition duration-200"
+                        disabled 
+                    />
+                    <button
+                        id="send-button"
+                        type="submit"
+                        class="absolute inset-y-0 right-0 flex items-center justify-center h-full w-14 text-blue-500 disabled:text-gray-600 hover:text-blue-400 disabled:cursor-not-allowed transition-colors"
+                        disabled
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                            <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </footer>
+
+    <script>
+        // --- Elemen DOM ---
+        const chatContainer = document.getElementById('chat-container');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const messagesEnd = document.getElementById('messages-end');
+        const errorBanner = document.getElementById('error-banner');
+
+        // --- Konfigurasi API ---
+        let API_KEY = ""; // Akan diisi oleh pengguna
+        const SYSTEM_INSTRUCTION = "You are a helpful and friendly assistant. Your responses should be concise, helpful, and polite. Your name is Gemini. You should format your responses using Markdown.";
+
+        // --- State Aplikasi ---
+        let messages = [];
+        let isLoading = false;
+
+        // --- Fungsi Bantuan untuk Membuat HTML ---
+        const createMessageHTML = (msg) => {
+            const isUser = msg.role === 'user';
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`;
+            
+            const markedOptions = { breaks: true, gfm: true };
+            const sanitizedText = msg.parts[0].text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const content = marked.parse(sanitizedText, markedOptions);
+
+            if (isUser) {
+                messageWrapper.innerHTML = `<div class="max-w-[80%] px-3 py-2 sm:px-4 sm:py-3 rounded-2xl bg-blue-900/50 text-gray-100 rounded-br-lg"><div class="chat-content text-base leading-relaxed">${content}</div></div>`;
+            } else {
+                const botAvatar = `<div class="w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center bg-gray-800 text-gray-400 font-bold text-sm">AI</div>`;
+                messageWrapper.innerHTML = `
+                    ${botAvatar}
+                    <div class="flex-1 text-gray-100 pt-1"><div class="chat-content text-base leading-relaxed">${content}</div></div>`;
+            }
+            return messageWrapper;
+        };
+
+        const createLoadingIndicatorHTML = () => {
+            const loadingWrapper = document.createElement('div');
+            loadingWrapper.className = 'flex items-start gap-3 justify-start';
+            const botAvatar = `<div class="w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center bg-gray-800 text-gray-400 font-bold text-sm">AI</div>`;
+            loadingWrapper.innerHTML = `
+                ${botAvatar}
+                <div class="flex-1 pt-1">
+                    <div class="flex items-center space-x-1.5 animate-pulse-dots pt-1.5">
+                        <span class="w-2 h-2 bg-gray-600 rounded-full"></span>
+                        <span class="w-2 h-2 bg-gray-600 rounded-full"></span>
+                        <span class="w-2 h-2 bg-gray-600 rounded-full"></span>
+                    </div>
+                </div>`;
+            return loadingWrapper;
+        };
+
+        // --- Fungsi Inti ---
+        const showError = (message) => {
+            errorBanner.textContent = message;
+            errorBanner.classList.remove('hidden');
+        };
+
+        const hideError = () => {
+            errorBanner.classList.add('hidden');
+        };
+
+        const renderMessages = () => {
+            chatContainer.innerHTML = '';
+            messages.forEach(msg => {
+                chatContainer.appendChild(createMessageHTML(msg));
+            });
+
+            if (isLoading) {
+                chatContainer.appendChild(createLoadingIndicatorHTML());
+            }
+            messagesEnd.scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        const initializeChat = () => {
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            chatInput.placeholder = "Input API Key Anda...";
+            messages.push({ role: 'model', parts: [{ text: 'Selamat datang! Mohon masukkan Gemini API Key Anda untuk memulai.' }] });
+            renderMessages();
+        }
+
+        const callGeminiAPI = async (messageHistory) => {
+            isLoading = true;
+            hideError();
+            renderMessages();
+            
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+
+            try {
+                // Tambahkan 'tools' untuk mengaktifkan Google Search
+                const payload = { 
+                    contents: messageHistory, 
+                    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+                    tools: [{ "google_search": {} }] 
+                };
+                const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `Kesalahan API: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, saya tidak bisa mendapatkan respons.";
+                messages.push({ role: 'model', parts: [{ text: botResponse }] });
+
+            } catch (err) {
+                showError(err.message);
+                // Jika error karena API Key salah, minta lagi.
+                if (err.message.toLowerCase().includes("api key not valid")) {
+                    API_KEY = "";
+                    messages.push({role: 'model', parts: [{ text: 'API Key sepertinya tidak valid. Silakan coba masukkan lagi.'}]});
+                    chatInput.placeholder = "Input API Key Anda...";
+                }
+            } finally {
+                isLoading = false;
+                renderMessages();
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                chatInput.focus();
+            }
+        };
+
+        // --- Event Listener ---
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userInput = chatInput.value.trim();
+            if (!userInput || isLoading) return;
+
+            // Jika API Key belum di-set, anggap input sebagai API Key
+            if (!API_KEY) {
+                API_KEY = userInput;
+                chatInput.value = '';
+                chatInput.placeholder = 'Ketik pesan Anda...';
+                messages = [{ role: 'model', parts: [{ text: 'API Key diterima! Anda bisa mulai percakapan.' }] }];
+                renderMessages();
+                return;
+            }
+            
+            // Logika chat normal
+            messages.push({ role: 'user', parts: [{ text: userInput }] });
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+
+            renderMessages();
+            callGeminiAPI(messages);
+        });
+        
+        // --- Inisialisasi Aplikasi & PWA ---
+        window.addEventListener('load', () => {
+            initializeChat();
+            // Registrasi Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker berhasil didaftarkan:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Pendaftaran Service Worker gagal:', error);
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
+
