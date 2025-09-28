@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gemini Chatbot</title>
-    
+
     <!-- PWA Manifest & Theme Color -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000"/>
@@ -37,7 +37,16 @@
         }
         .animate-pulse-dots span:nth-child(1) { animation-delay: -0.32s; }
         .animate-pulse-dots span:nth-child(2) { animation-delay: -0.16s; }
-        
+
+        /* Utility untuk menyembunyikan scrollbar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
         /* Styling untuk konten yang dihasilkan oleh Marked.js */
         .chat-content p { margin-bottom: 0.5rem; }
         .chat-content p:last-child { margin-bottom: 0; }
@@ -49,7 +58,7 @@
         .chat-content a { color: #3b82f6; text-decoration: underline; }
         .chat-content a:hover { color: #60a5fa; }
         .chat-content blockquote { border-left: 4px solid #4b5563; padding-left: 1rem; margin-left: 0; color: #9ca3af; }
-        
+
         /* Styling untuk tabel */
         .chat-content table {
             width: 100%;
@@ -74,7 +83,7 @@
     </header>
 
     <!-- Area Pesan Chat (Scrollable) -->
-    <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 w-full max-w-3xl mx-auto">
+    <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 w-full max-w-3xl mx-auto no-scrollbar">
         <!-- Pesan akan dirender oleh JavaScript di sini -->
     </main>
     <div id="messages-end"></div>
@@ -129,7 +138,7 @@
             const isUser = msg.role === 'user';
             const messageWrapper = document.createElement('div');
             messageWrapper.className = `flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`;
-            
+
             const markedOptions = { breaks: true, gfm: true };
             const sanitizedText = msg.parts[0].text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const content = marked.parse(sanitizedText, markedOptions);
@@ -182,7 +191,7 @@
             }
             messagesEnd.scrollIntoView({ behavior: 'smooth' });
         };
-        
+
         const initializeChat = () => {
             chatInput.disabled = false;
             sendButton.disabled = false;
@@ -195,7 +204,7 @@
             isLoading = true;
             hideError();
             renderMessages();
-            
+
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
 
             try {
@@ -206,12 +215,12 @@
                     tools: [{ "google_search": {} }] 
                 };
                 const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                
+
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.error?.message || `Kesalahan API: ${response.statusText}`);
                 }
-                
+
                 const data = await response.json();
                 const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, saya tidak bisa mendapatkan respons.";
                 messages.push({ role: 'model', parts: [{ text: botResponse }] });
@@ -248,7 +257,7 @@
                 renderMessages();
                 return;
             }
-            
+
             // Logika chat normal
             messages.push({ role: 'user', parts: [{ text: userInput }] });
             chatInput.value = '';
@@ -258,7 +267,7 @@
             renderMessages();
             callGeminiAPI(messages);
         });
-        
+
         // --- Inisialisasi Aplikasi & PWA ---
         window.addEventListener('load', () => {
             initializeChat();
