@@ -208,7 +208,6 @@
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
 
             try {
-                // Tambahkan 'tools' untuk mengaktifkan Google Search
                 const payload = { 
                     contents: messageHistory, 
                     systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
@@ -227,7 +226,6 @@
 
             } catch (err) {
                 showError(err.message);
-                // Jika error karena API Key salah, minta lagi.
                 if (err.message.toLowerCase().includes("api key not valid")) {
                     API_KEY = "";
                     messages.push({role: 'model', parts: [{ text: 'API Key sepertinya tidak valid. Silakan coba masukkan lagi.'}]});
@@ -238,8 +236,7 @@
                 renderMessages();
                 chatInput.disabled = false;
                 sendButton.disabled = false;
-                // Hilangkan fokus dari input untuk menutup keyboard di mobile
-                chatInput.blur();
+                chatInput.focus();
             }
         };
 
@@ -249,32 +246,38 @@
             const userInput = chatInput.value.trim();
             if (!userInput || isLoading) return;
 
-            // Jika API Key belum di-set, anggap input sebagai API Key
             if (!API_KEY) {
                 API_KEY = userInput;
                 chatInput.value = '';
                 chatInput.placeholder = 'Ketik pesan Anda...';
                 messages = [{ role: 'model', parts: [{ text: 'API Key diterima! Anda bisa mulai percakapan.' }] }];
                 renderMessages();
+                chatInput.blur(); // Menutup keyboard setelah submit API Key
                 return;
             }
             
-            // Logika chat normal
             messages.push({ role: 'user', parts: [{ text: userInput }] });
             chatInput.value = '';
             chatInput.disabled = true;
             sendButton.disabled = true;
+            chatInput.blur(); // Menutup keyboard setelah submit pesan
 
             renderMessages();
             callGeminiAPI(messages);
         });
         
+        // **PERBAIKAN UTAMA DI SINI**
+        chatInput.addEventListener('blur', () => {
+            // Ini memaksa browser untuk menggambar ulang layout
+            // saat keyboard ditutup secara manual.
+            window.scrollTo(0, 0);
+        });
+
         // --- Inisialisasi Aplikasi & PWA ---
         window.addEventListener('load', () => {
             initializeChat();
-            // Registrasi Service Worker
             if ('serviceWorker' in navigator) {
-                navigator.service-worker.register('/sw.js')
+                navigator.serviceWorker.register('/sw.js')
                     .then(registration => {
                         console.log('Service Worker berhasil didaftarkan:', registration);
                     })
