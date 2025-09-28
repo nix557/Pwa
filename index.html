@@ -83,10 +83,12 @@
     </header>
 
     <!-- Area Pesan Chat (Scrollable with Padding) -->
-    <main id="chat-container" class="h-[100dvh] overflow-y-auto px-4 md:px-6 pt-20 pb-24 space-y-6 w-full max-w-3xl mx-auto no-scrollbar">
+    <!-- PERBAIKAN 1: Menambah padding bawah (pb-28) -->
+    <main id="chat-container" class="h-[100dvh] overflow-y-auto px-4 md:px-6 pt-20 pb-28 space-y-6 w-full max-w-3xl mx-auto no-scrollbar">
         <!-- Pesan akan dirender oleh JavaScript di sini -->
+        <!-- PERBAIKAN 2: Memindahkan elemen scroll-to ke dalam container -->
+        <div id="messages-end"></div>
     </main>
-    <div id="messages-end"></div>
 
     <!-- Form Input Pesan (Fixed) -->
     <footer class="bg-black border-t border-gray-800 p-4 w-full fixed bottom-0">
@@ -181,14 +183,28 @@
         };
 
         const renderMessages = () => {
-            chatContainer.innerHTML = '';
+            // Simpan semua node pesan yang ada
+            const existingMessages = Array.from(chatContainer.children).filter(node => node.id !== 'messages-end');
+            
+            // Hapus semua node pesan lama
+            existingMessages.forEach(node => node.remove());
+
+            // Render ulang semua pesan dan masukkan sebelum elemen 'messages-end'
             messages.forEach(msg => {
-                chatContainer.appendChild(createMessageHTML(msg));
+                chatContainer.insertBefore(createMessageHTML(msg), messagesEnd);
             });
 
+            // Hapus indikator loading lama jika ada
+            const oldLoadingIndicator = chatContainer.querySelector('.loading-indicator-wrapper');
+            if(oldLoadingIndicator) oldLoadingIndicator.remove();
+            
+            // Tambahkan indikator loading jika diperlukan
             if (isLoading) {
-                chatContainer.appendChild(createLoadingIndicatorHTML());
+                 const loadingIndicator = createLoadingIndicatorHTML();
+                 loadingIndicator.classList.add('loading-indicator-wrapper');
+                 chatContainer.insertBefore(loadingIndicator, messagesEnd);
             }
+            
             messagesEnd.scrollIntoView({ behavior: 'smooth' });
         };
         
@@ -266,7 +282,6 @@
             callGeminiAPI(messages);
         });
         
-        // **PERBAIKAN UTAMA DI SINI**
         chatInput.addEventListener('blur', () => {
             // Ini memaksa browser untuk menggambar ulang layout
             // saat keyboard ditutup secara manual.
