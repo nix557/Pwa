@@ -1,6 +1,6 @@
 {
-  "name": "Gemini Chatbot",
-  "short_name": "GeminiChat",
+  "name": "NixAI",
+  "short_name": "NixAI",
   "description": "Sebuah chatbot sederhana yang ditenagai oleh Gemini AI.",
   "start_url": ".",
   "display": "standalone",
